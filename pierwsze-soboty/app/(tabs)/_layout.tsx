@@ -7,23 +7,27 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={24} style={{ marginBottom: -2 }} {...props} />;
 }
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const theme = Colors[colorScheme ?? 'light'];
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
+        tabBarActiveTintColor: theme.tint,
+        tabBarInactiveTintColor: theme.tabIconDefault,
+        tabBarStyle: { backgroundColor: theme.background, borderTopColor: theme.cardBorder, height: 60, paddingBottom: 8 },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: '600' },
+        headerStyle: { backgroundColor: theme.background },
+        headerTitleStyle: { color: theme.text, fontWeight: '800' },
+        headerTintColor: theme.text,
         headerShown: useClientOnlyValue(false, true),
       }}>
       <Tabs.Screen
@@ -32,13 +36,13 @@ export default function TabLayout() {
           title: 'Start',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
           headerRight: () => (
-            <Link href="/modal" asChild>
+            <Link href="/informacje" asChild>
               <Pressable>
                 {({ pressed }) => (
                   <FontAwesome
                     name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
+                    size={22}
+                    color={theme.text}
                     style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
                   />
                 )}

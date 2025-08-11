@@ -6,6 +6,7 @@ import { pl } from 'date-fns/locale';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { scheduleFirstSaturdayReminders } from '@/lib/notifications';
+import Card from '@/components/ui/Card';
 
 const STORAGE_KEY = 'pierwsze-soboty:completed';
 const CYCLES_KEY = 'pierwsze-soboty:cycles';
@@ -33,7 +34,7 @@ function evaluateCycles(allDatesAsc: string[], completed: CompletedMap) {
       currentStreak += 1;
       if (currentStreak === 5) {
         cycles += 1;
-        currentStreak = 0; // reset dla kolejnego cyklu
+        currentStreak = 0;
       }
     } else {
       currentStreak = 0;
@@ -82,92 +83,52 @@ export default function PostepScreen() {
   }
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, backgroundColor: theme.background }}>
-      <Text style={[styles.title, { color: theme.tint }]}>Kalendarz postępu</Text>
-      <Text style={{ color: theme.text, marginTop: 4 }}>Pełne nabożeństwa ukończone: {totalCycles}</Text>
-      <Text style={{ color: theme.text, marginTop: 2 }}>Aktualny cykl: {currentCycleProgress}/5</Text>
-      <View style={[styles.progressBar, { backgroundColor: theme.cardBorder, marginTop: 8 }]}>
-        <View style={[styles.progressFill, { width: `${(currentCycleProgress / 5) * 100}%`, backgroundColor: theme.accentGold }]} />
-      </View>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, backgroundColor: theme.background, alignItems: 'center' }}>
+      <View style={{ width: '100%', maxWidth: 720 }}>
+        <Text style={[styles.title, { color: theme.tint }]}>Kalendarz postępu</Text>
+        <Text style={{ color: theme.text, marginTop: 4, textAlign: 'center' }}>Pełne nabożeństwa ukończone: {totalCycles}</Text>
+        <Text style={{ color: theme.text, marginTop: 2, textAlign: 'center' }}>Aktualny cykl: {currentCycleProgress}/5</Text>
+        <View style={[styles.progressBar, { backgroundColor: theme.cardBorder, marginTop: 8 }]}>
+          <View style={[styles.progressFill, { width: `${(currentCycleProgress / 5) * 100}%`, backgroundColor: theme.accentGold }]} />
+        </View>
 
-      <View style={{ marginTop: 16 }}>
-        <Text style={{ color: theme.text, fontWeight: '700', marginBottom: 8 }}>Pierwsze soboty {year}</Text>
-        <View style={{ gap: 10 }}>
+        <View style={{ marginTop: 16, gap: 10 }}>
           {firstSaturdays.map((iso, idx) => {
             const isDone = Boolean(completed[iso]);
             const d = new Date(`${iso}T00:00:00`);
             const label = format(d, 'd MMMM yyyy', { locale: pl });
             return (
-              <Pressable key={iso} onPress={() => toggleDate(iso)}
-                style={({ pressed }) => [styles.row, { backgroundColor: theme.card, borderColor: isDone ? theme.accentGold : theme.cardBorder, opacity: pressed ? 0.9 : 1 }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.rowTitle, { color: theme.text }]}>{idx + 1}. sobota — {label}</Text>
-                  <Text style={{ color: theme.text, opacity: 0.7, fontSize: 12 }}>{iso}</Text>
+              <Card key={iso} onPress={() => toggleDate(iso)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <View style={[styles.heartCircle, { borderColor: isDone ? theme.accentGold : theme.cardBorder, backgroundColor: isDone ? theme.accentRose : 'transparent' }]}>
+                    <Text style={{ fontSize: 18 }}>{isDone ? '💛' : '🤍'}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.rowTitle, { color: theme.text }]}>{idx + 1}. sobota — {label}</Text>
+                    <Text style={{ color: theme.text, opacity: 0.7, fontSize: 12 }}>{iso}</Text>
+                  </View>
                 </View>
-                <View style={[styles.heartCircle, { borderColor: isDone ? theme.accentGold : theme.cardBorder, backgroundColor: isDone ? theme.accentRose : 'transparent' }]}>
-                  <Text style={{ fontSize: 16 }}>{isDone ? '💛' : '🤍'}</Text>
-                </View>
-              </Pressable>
+              </Card>
             );
           })}
         </View>
-      </View>
 
-      <Pressable onPress={handleScheduleNotifications}
-        style={({ pressed }) => [{
-          marginTop: 16,
-          paddingVertical: 12,
-          alignItems: 'center',
-          borderRadius: 12,
-          backgroundColor: theme.tint,
-          opacity: pressed ? 0.85 : 1,
-        }]}>
-        <Text style={{ color: 'white', fontWeight: '700' }}>Ustaw przypomnienia na pierwsze soboty</Text>
-      </Pressable>
+        <Pressable onPress={handleScheduleNotifications} style={({ pressed }) => [{ marginTop: 16, paddingVertical: 12, alignItems: 'center', borderRadius: 12, backgroundColor: theme.tint, opacity: pressed ? 0.85 : 1 }]}>
+          <Text style={{ color: 'white', fontWeight: '700' }}>Ustaw przypomnienia na pierwsze soboty</Text>
+        </Pressable>
 
-      <View style={{ marginTop: 16 }}>
-        <Text style={{ color: theme.text, opacity: 0.8 }}>
-          Dotknij wiersz, aby odznaczyć pierwszą sobotę jako ukończoną. 5 kolejnych pierwszych sobót tworzy pełne nabożeństwo.
-        </Text>
+        <View style={{ marginTop: 16 }}>
+          <Text style={{ color: theme.text, opacity: 0.8, textAlign: 'center' }}>Dotknij wiersz, aby odznaczyć pierwszą sobotę jako ukończoną. 5 kolejnych pierwszych sobót tworzy pełne nabożeństwo.</Text>
+        </View>
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  progressBar: {
-    marginTop: 8,
-    height: 10,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 999,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    borderWidth: 2,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  rowTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  heartCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  title: { fontSize: 24, fontWeight: '800', textAlign: 'center' },
+  progressBar: { marginTop: 8, height: 10, borderRadius: 999, overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 999 },
+  rowTitle: { fontSize: 15, fontWeight: '700' },
+  heartCircle: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, alignItems: 'center', justifyContent: 'center' },
 });
