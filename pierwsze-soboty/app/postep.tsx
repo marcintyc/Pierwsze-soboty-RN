@@ -14,13 +14,13 @@ const CYCLES_KEY = 'pierwsze-soboty:cycles';
 
 type CompletedMap = Record<string, boolean>;
 
-function evaluateCyclesUpToToday(datesAsc: string[], completed: CompletedMap, todayISO: string) {
+function evaluateCyclesEndingAt(datesAsc: string[], completed: CompletedMap, endISO: string) {
   let cycles = 0;
   let streak = 0;
-  let lastIndex = datesAsc.findIndex((iso) => iso > todayISO) - 1;
-  if (lastIndex < 0) lastIndex = datesAsc.length - 1; // jeśli wszystkie <= dziś
+  let endIndex = datesAsc.findIndex((iso) => iso > endISO) - 1;
+  if (endIndex < 0) endIndex = datesAsc.length - 1;
 
-  for (let i = 0; i <= lastIndex; i++) {
+  for (let i = 0; i <= endIndex; i++) {
     const iso = datesAsc[i];
     if (completed[iso]) {
       streak += 1;
@@ -65,9 +65,17 @@ export default function PostepScreen() {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
   }, [completed]);
 
+  const lastCompletedISO = useMemo(() => {
+    const done = Object.entries(completed)
+      .filter(([, v]) => v)
+      .map(([k]) => k)
+      .sort();
+    return done.length ? done[done.length - 1] : todayISO;
+  }, [completed, todayISO]);
+
   const { cycles, currentStreak } = useMemo(
-    () => evaluateCyclesUpToToday(allFirstSaturdays, completed, todayISO),
-    [allFirstSaturdays, completed, todayISO]
+    () => evaluateCyclesEndingAt(allFirstSaturdays, completed, lastCompletedISO),
+    [allFirstSaturdays, completed, lastCompletedISO]
   );
   const totalCycles = Math.max(storedCycles, cycles);
 
@@ -80,16 +88,15 @@ export default function PostepScreen() {
   }
 
   function Heart({ filled }: { filled: boolean }) {
+    const red = '#e11d48';
     return (
-      <View style={[styles.heartCircle, { borderColor: filled ? theme.accentGold : theme.cardBorder, backgroundColor: filled ? theme.accentRose : 'transparent' }]}>
-        <Text style={{ fontSize: 18 }}>{filled ? '💛' : '🤍'}</Text>
+      <View style={[styles.heartCircle, { borderColor: filled ? red : theme.cardBorder, backgroundColor: 'transparent' }]}>
+        <Text style={{ fontSize: 18 }}>{filled ? '❤️' : '🤍'}</Text>
       </View>
     );
   }
 
-  const nextFive = useMemo(() => {
-    return Array.from({ length: 5 }).map((_, i) => i < currentStreak);
-  }, [currentStreak]);
+  const nextFive = useMemo(() => Array.from({ length: 5 }).map((_, i) => i < currentStreak), [currentStreak]);
 
   return (
     <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, backgroundColor: theme.background, alignItems: 'center' }}>
