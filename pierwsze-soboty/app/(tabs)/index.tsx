@@ -1,5 +1,6 @@
 import { Link } from 'expo-router';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,27 +12,29 @@ export default function HomeScreen() {
 
   return (
     <LinearGradient colors={[theme.background, theme.card]} start={{ x: 0.2, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
-      <ScrollView contentContainerStyle={styles.container} style={{ flex: 1 }}>
-        <View style={styles.centered}>
-          <Image source={require('@/assets/images/icon.png')} style={styles.heroImage} />
-          <Text style={[styles.title, { color: theme.tint }]}>Pierwsze Soboty</Text>
-          <Text style={[styles.subtitle, { color: theme.text }]}>Nabożeństwo wynagradzające Niepokalanemu Sercu Maryi</Text>
-        </View>
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={styles.container} style={{ flex: 1 }}>
+          <View style={styles.centered}>
+            <Image source={require('@/assets/images/icon.png')} style={styles.heroImage} />
+            <Text style={[styles.title, { color: theme.tint }]}>Pierwsze Soboty</Text>
+            <Text style={[styles.subtitle, { color: theme.text }]}>Nabożeństwo wynagradzające Niepokalanemu Sercu Maryi</Text>
+          </View>
 
-        <Text style={[styles.paragraph, { color: theme.text }]}>Tym, którzy przez pięć miesięcy w pierwsze soboty odprawią nabożeństwa, w stanie łaski i w intencji wynagradzającej Jej Niepokalanemu Sercu, wyjednam łaski potrzebne do zbawienia.</Text>
+          <Text style={[styles.paragraph, { color: theme.text }]}>Tym, którzy przez pięć miesięcy w pierwsze soboty odprawią nabożeństwa, w stanie łaski i w intencji wynagradzającej Jej Niepokalanemu Sercu, wyjednam łaski potrzebne do zbawienia.</Text>
 
-        <View style={styles.actions}>
-          <Link href="/warunki" asChild>
-            <Button title="Rozpocznij nabożeństwo" variant="primary" />
-          </Link>
-          <Link href="/postep" asChild>
-            <Button title="Kalendarz postępu" variant="outline" />
-          </Link>
-          <Link href="/informacje" asChild>
-            <Button title="Informacje" variant="ghost" />
-          </Link>
-        </View>
-      </ScrollView>
+          <View style={styles.actions}>
+            <Link href="/warunki" asChild>
+              <Button title="Rozpocznij nabożeństwo" variant="primary" />
+            </Link>
+            <Link href="/postep" asChild>
+              <Button title="Kalendarz postępu" variant="outline" />
+            </Link>
+            <Link href="/informacje" asChild>
+              <Button title="Informacje" variant="ghost" />
+            </Link>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
     </LinearGradient>
   );
 }
