@@ -3,7 +3,9 @@ name: Deploy Web (Expo) to GitHub Pages
 on:
   push:
     branches:
+      - main
       - feature/pierwsze-soboty-app
+  workflow_dispatch:
 
 permissions:
   contents: write
