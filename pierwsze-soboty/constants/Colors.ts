@@ -8,11 +8,11 @@ const nearBlack = '#0f172a';
 export default {
   light: {
     text: nearBlack,
-    background: white,
+    background: '#eef5ff',
     tint: maryBlue,
     tabIconDefault: '#b6c2ff',
     tabIconSelected: maryBlue,
-    card: '#f7f9ff',
+    card: '#f7faff',
     cardBorder: maryBlueLight,
     accentGold: maryGold,
     accentRose: maryRose,

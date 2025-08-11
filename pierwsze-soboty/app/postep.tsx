@@ -14,10 +14,14 @@ const CYCLES_KEY = 'pierwsze-soboty:cycles';
 
 type CompletedMap = Record<string, boolean>;
 
-function evaluateCycles(datesAsc: string[], completed: CompletedMap) {
+function evaluateCyclesUpToToday(datesAsc: string[], completed: CompletedMap, todayISO: string) {
   let cycles = 0;
   let streak = 0;
-  for (const iso of datesAsc) {
+  let lastIndex = datesAsc.findIndex((iso) => iso > todayISO) - 1;
+  if (lastIndex < 0) lastIndex = datesAsc.length - 1; // jeśli wszystkie <= dziś
+
+  for (let i = 0; i <= lastIndex; i++) {
+    const iso = datesAsc[i];
     if (completed[iso]) {
       streak += 1;
       if (streak === 5) {
@@ -38,6 +42,7 @@ export default function PostepScreen() {
   const [storedCycles, setStoredCycles] = useState<number>(0);
 
   const now = new Date();
+  const todayISO = format(now, 'yyyy-MM-dd');
   const yearsSpan = useMemo(() => {
     const y = now.getFullYear();
     return [y - 1, y, y + 1] as const;
@@ -60,7 +65,10 @@ export default function PostepScreen() {
     AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(completed));
   }, [completed]);
 
-  const { cycles, currentStreak } = useMemo(() => evaluateCycles(allFirstSaturdays, completed), [allFirstSaturdays, completed]);
+  const { cycles, currentStreak } = useMemo(
+    () => evaluateCyclesUpToToday(allFirstSaturdays, completed, todayISO),
+    [allFirstSaturdays, completed, todayISO]
+  );
   const totalCycles = Math.max(storedCycles, cycles);
 
   useEffect(() => {
@@ -80,9 +88,7 @@ export default function PostepScreen() {
   }
 
   const nextFive = useMemo(() => {
-    // Podgląd paska 5 serc: bieżąca seria + niewypełnione do 5
-    const series = Array.from({ length: 5 }).map((_, i) => i < currentStreak);
-    return series;
+    return Array.from({ length: 5 }).map((_, i) => i < currentStreak);
   }, [currentStreak]);
 
   return (
@@ -98,7 +104,7 @@ export default function PostepScreen() {
         </View>
 
         <View style={{ marginTop: 18, gap: 12 }}>
-          {allFirstSaturdays.map((iso, idx) => {
+          {allFirstSaturdays.map((iso) => {
             const isDone = Boolean(completed[iso]);
             const d = new Date(`${iso}T00:00:00`);
             const label = format(d, 'd MMMM yyyy (EEEE)', { locale: pl });
@@ -107,7 +113,7 @@ export default function PostepScreen() {
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <Heart filled={isDone} />
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.rowTitle, { color: theme.text }]}>{idx + 1}. {label}</Text>
+                    <Text style={[styles.rowTitle, { color: theme.text }]}>{label}</Text>
                     <Text style={{ color: theme.text, opacity: 0.7, fontSize: 12 }}>{iso}</Text>
                   </View>
                 </View>
