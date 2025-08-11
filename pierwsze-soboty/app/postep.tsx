@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CalendarList, DateData } from 'react-native-calendars';
 import { startOfYear, endOfYear, eachMonthOfInterval, getDay, addDays, format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { scheduleFirstSaturdayReminders } from '@/lib/notifications';
@@ -33,7 +33,7 @@ function evaluateCycles(allDatesAsc: string[], completed: CompletedMap) {
       currentStreak += 1;
       if (currentStreak === 5) {
         cycles += 1;
-        currentStreak = 0; // reset for potencjalny kolejny cykl
+        currentStreak = 0; // reset dla kolejnego cyklu
       }
     } else {
       currentStreak = 0;
@@ -71,18 +71,6 @@ export default function PostepScreen() {
     AsyncStorage.setItem(CYCLES_KEY, String(totalCycles));
   }, [totalCycles]);
 
-  const markedDates = useMemo(() => {
-    const marks: any = {};
-    for (const date of firstSaturdays) {
-      if (completed[date]) {
-        marks[date] = { marked: true, selected: true, selectedColor: theme.accentGold, dotColor: theme.accentGold };
-      } else {
-        marks[date] = { marked: true, dotColor: theme.tint };
-      }
-    }
-    return marks;
-  }, [firstSaturdays, completed, theme]);
-
   function toggleDate(date: string) {
     setCompleted((s) => ({ ...s, [date]: !s[date] }));
   }
@@ -102,24 +90,27 @@ export default function PostepScreen() {
         <View style={[styles.progressFill, { width: `${(currentCycleProgress / 5) * 100}%`, backgroundColor: theme.accentGold }]} />
       </View>
 
-      <View style={{ marginTop: 16, borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: theme.cardBorder }}>
-        <CalendarList
-          pastScrollRange={0}
-          futureScrollRange={0}
-          scrollEnabled={false}
-          showScrollIndicator={false}
-          horizontal={false}
-          markedDates={markedDates}
-          onDayPress={(day: DateData) => {
-            if (firstSaturdays.includes(day.dateString)) toggleDate(day.dateString);
-          }}
-          theme={{
-            calendarBackground: theme.background,
-            dayTextColor: theme.text,
-            monthTextColor: theme.text,
-            textDisabledColor: '#94a3b8',
-          }}
-        />
+      <View style={{ marginTop: 16 }}>
+        <Text style={{ color: theme.text, fontWeight: '700', marginBottom: 8 }}>Pierwsze soboty {year}</Text>
+        <View style={{ gap: 10 }}>
+          {firstSaturdays.map((iso, idx) => {
+            const isDone = Boolean(completed[iso]);
+            const d = new Date(`${iso}T00:00:00`);
+            const label = format(d, 'd MMMM yyyy', { locale: pl });
+            return (
+              <Pressable key={iso} onPress={() => toggleDate(iso)}
+                style={({ pressed }) => [styles.row, { backgroundColor: theme.card, borderColor: isDone ? theme.accentGold : theme.cardBorder, opacity: pressed ? 0.9 : 1 }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.rowTitle, { color: theme.text }]}>{idx + 1}. sobota — {label}</Text>
+                  <Text style={{ color: theme.text, opacity: 0.7, fontSize: 12 }}>{iso}</Text>
+                </View>
+                <View style={[styles.heartCircle, { borderColor: isDone ? theme.accentGold : theme.cardBorder, backgroundColor: isDone ? theme.accentRose : 'transparent' }]}>
+                  <Text style={{ fontSize: 16 }}>{isDone ? '💛' : '🤍'}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       <Pressable onPress={handleScheduleNotifications}
@@ -136,7 +127,7 @@ export default function PostepScreen() {
 
       <View style={{ marginTop: 16 }}>
         <Text style={{ color: theme.text, opacity: 0.8 }}>
-          Dotknij wybraną sobotę w kalendarzu, aby odznaczyć jako ukończoną. 5 kolejnych pierwszych sobót tworzy pełne nabożeństwo.
+          Dotknij wiersz, aby odznaczyć pierwszą sobotę jako ukończoną. 5 kolejnych pierwszych sobót tworzy pełne nabożeństwo.
         </Text>
       </View>
     </ScrollView>
@@ -157,5 +148,26 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 999,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderWidth: 2,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  rowTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  heartCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
