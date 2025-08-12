@@ -15,6 +15,7 @@ export default function RootLayout() {
         <Stack.Screen name="warunki" options={{ title: 'Warunki' }} />
         <Stack.Screen name="postep" options={{ title: 'Kalendarz postępu' }} />
         <Stack.Screen name="informacje" options={{ title: 'Informacje' }} />
+        <Stack.Screen name="start" options={{ title: 'Rozpocznij nabożeństwo' }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>

@@ -37,10 +37,13 @@ export default function HomeScreen() {
 
           <View style={styles.actions}>
             <Link href="/warunki" asChild>
-              <Button title="Rozpocznij nabożeństwo" variant="primary" />
+              <Button title="Warunki" variant="primary" />
+            </Link>
+            <Link href="/start" asChild>
+              <Button title="Rozpocznij nabożeństwo" variant="outline" />
             </Link>
             <Link href="/postep" asChild>
-              <Button title="Kalendarz postępu" variant="outline" />
+              <Button title="Kalendarz postępu" variant="ghost" />
             </Link>
             <Link href="/informacje" asChild>
               <Button title="Informacje" variant="ghost" />
