@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
@@ -40,7 +40,7 @@ export default function PostepScreen() {
   const theme = Colors[colorScheme ?? 'light'];
   const [completed, setCompleted] = useState<CompletedMap>({});
   const [storedCycles, setStoredCycles] = useState<number>(0);
-  const scrollRef = useRef<ScrollView | null>(null);
+  const [showHistory, setShowHistory] = useState<boolean>(false);
 
   const now = new Date();
   const todayISO = format(now, 'yyyy-MM-dd');
@@ -52,13 +52,6 @@ export default function PostepScreen() {
     const dates = getFirstSaturdaysBetweenYears(yearsSpan[0], yearsSpan[2]);
     return dates.sort();
   }, [yearsSpan]);
-
-  const centerTargetIndex = useMemo(() => {
-    const todayISO = format(new Date(), 'yyyy-MM-dd');
-    const futureIdx = allFirstSaturdays.findIndex((iso) => iso >= todayISO);
-    if (futureIdx === -1) return allFirstSaturdays.length - 1;
-    return futureIdx;
-  }, [allFirstSaturdays]);
 
   useEffect(() => {
     (async () => {
@@ -91,16 +84,8 @@ export default function PostepScreen() {
     AsyncStorage.setItem(CYCLES_KEY, String(totalCycles));
   }, [totalCycles]);
 
-  useEffect(() => {
-    // lekkie opóźnienie po renderze
-    const id = setTimeout(() => {
-      if (!scrollRef.current) return;
-      const approximateItemHeight = 72; // przybliżona wysokość karty
-      const y = Math.max(0, (centerTargetIndex - 2) * (approximateItemHeight + 12));
-      scrollRef.current.scrollTo({ y, animated: true });
-    }, 100);
-    return () => clearTimeout(id);
-  }, [centerTargetIndex]);
+  const futureDates = useMemo(() => allFirstSaturdays.filter((d) => d >= todayISO), [allFirstSaturdays, todayISO]);
+  const pastDatesDesc = useMemo(() => allFirstSaturdays.filter((d) => d < todayISO).sort().reverse(), [allFirstSaturdays, todayISO]);
 
   function toggleDate(date: string) {
     setCompleted((s) => ({ ...s, [date]: !s[date] }));
@@ -118,45 +103,76 @@ export default function PostepScreen() {
   const nextFive = useMemo(() => Array.from({ length: 5 }).map((_, i) => i < currentStreak), [currentStreak]);
 
   return (
-    <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={{ padding: 20, backgroundColor: theme.background, alignItems: 'center' }}>
-      <View style={{ width: '100%', maxWidth: 720 }}>
-        <Text style={[styles.title, { color: theme.tint }]}>Kalendarz postępu</Text>
-        <Text style={{ color: theme.text, marginTop: 4, textAlign: 'center' }}>Pełne nabożeństwa ukończone: {totalCycles}</Text>
-
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 10 }}>
-          {nextFive.map((filled, i) => (
-            <Heart key={i} filled={filled} />
-          ))}
-        </View>
-
-        <View style={{ marginTop: 18, gap: 12 }}>
-          {allFirstSaturdays.map((iso) => {
-            const isDone = Boolean(completed[iso]);
-            const d = new Date(`${iso}T00:00:00`);
-            const label = format(d, 'd MMMM yyyy (EEEE)', { locale: pl });
-            return (
-              <Card key={iso} onPress={() => toggleDate(iso)}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Heart filled={isDone} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.rowTitle, { color: theme.text }]}>{label}</Text>
-                    <Text style={{ color: theme.text, opacity: 0.7, fontSize: 12 }}>{iso}</Text>
-                  </View>
-                </View>
-              </Card>
-            );
-          })}
-        </View>
-
-        <Pressable onPress={async () => { try { await scheduleFirstSaturdayReminders(9, 0); } catch {} }} style={({ pressed }) => [{ marginTop: 16, paddingVertical: 12, alignItems: 'center', borderRadius: 12, backgroundColor: theme.tint, opacity: pressed ? 0.85 : 1 }]}>
-          <Text style={{ color: 'white', fontWeight: '700' }}>Ustaw przypomnienia na pierwsze soboty</Text>
-        </Pressable>
-
-        <View style={{ marginTop: 16 }}>
-          <Text style={{ color: theme.text, opacity: 0.8, textAlign: 'center' }}>Dotknij wiersz, aby odznaczyć pierwszą sobotę jako ukończoną. 5 kolejnych pierwszych sobót tworzy pełne nabożeństwo (serca u góry).</Text>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <View style={{ padding: 20, alignItems: 'center' }}>
+        <View style={{ width: '100%', maxWidth: 720 }}>
+          <Text style={[styles.title, { color: theme.tint }]}>Kalendarz postępu</Text>
+          <Text style={{ color: theme.text, marginTop: 4, textAlign: 'center' }}>Pełne nabożeństwa ukończone: {totalCycles}</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: 10 }}>
+            {nextFive.map((filled, i) => (
+              <Heart key={i} filled={filled} />
+            ))}
+          </View>
         </View>
       </View>
-    </ScrollView>
+
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, alignItems: 'center', paddingBottom: 24 }}>
+        <View style={{ width: '100%', maxWidth: 720 }}>
+          <Text style={{ color: theme.text, fontWeight: '800', marginBottom: 8 }}>Najbliższe pierwsze soboty</Text>
+          <View style={{ gap: 12 }}>
+            {futureDates.map((iso) => {
+              const isDone = Boolean(completed[iso]);
+              const d = new Date(`${iso}T00:00:00`);
+              const label = format(d, 'd MMMM yyyy (EEEE)', { locale: pl });
+              return (
+                <Card key={iso} onPress={() => toggleDate(iso)}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <Heart filled={isDone} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.rowTitle, { color: theme.text }]}>{label}</Text>
+                      <Text style={{ color: theme.text, opacity: 0.7, fontSize: 12 }}>{iso}</Text>
+                    </View>
+                  </View>
+                </Card>
+              );
+            })}
+          </View>
+
+          <Pressable onPress={() => setShowHistory((v) => !v)} style={({ pressed }) => [{ marginTop: 16, alignItems: 'center', paddingVertical: 10, borderRadius: 10, borderWidth: 2, borderColor: theme.cardBorder, opacity: pressed ? 0.9 : 1 }]}>
+            <Text style={{ color: theme.text, fontWeight: '700' }}>{showHistory ? 'Ukryj historię' : 'Pokaż historię (archiwum)'}</Text>
+          </Pressable>
+
+          {showHistory && (
+            <View style={{ marginTop: 12, gap: 12 }}>
+              {pastDatesDesc.map((iso) => {
+                const isDone = Boolean(completed[iso]);
+                const d = new Date(`${iso}T00:00:00`);
+                const label = format(d, 'd MMMM yyyy (EEEE)', { locale: pl });
+                return (
+                  <Card key={iso} onPress={() => toggleDate(iso)}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <Heart filled={isDone} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.rowTitle, { color: theme.text }]}>{label}</Text>
+                        <Text style={{ color: theme.text, opacity: 0.7, fontSize: 12 }}>{iso}</Text>
+                      </View>
+                    </View>
+                  </Card>
+                );
+              })}
+            </View>
+          )}
+
+          <Pressable onPress={async () => { try { await scheduleFirstSaturdayReminders(9, 0); } catch {} }} style={({ pressed }) => [{ marginTop: 16, paddingVertical: 12, alignItems: 'center', borderRadius: 12, backgroundColor: theme.tint, opacity: pressed ? 0.85 : 1 }]}>
+            <Text style={{ color: 'white', fontWeight: '700' }}>Ustaw przypomnienia na pierwsze soboty</Text>
+          </Pressable>
+
+          <View style={{ marginTop: 16 }}>
+            <Text style={{ color: theme.text, opacity: 0.8, textAlign: 'center' }}>Dotknij wiersz, aby odznaczyć pierwszą sobotę jako ukończoną. 5 kolejnych pierwszych sobót tworzy pełne nabożeństwo (serca u góry).</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
