@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { format } from 'date-fns';
@@ -40,6 +40,7 @@ export default function PostepScreen() {
   const theme = Colors[colorScheme ?? 'light'];
   const [completed, setCompleted] = useState<CompletedMap>({});
   const [storedCycles, setStoredCycles] = useState<number>(0);
+  const scrollRef = useRef<ScrollView | null>(null);
 
   const now = new Date();
   const todayISO = format(now, 'yyyy-MM-dd');
@@ -51,6 +52,13 @@ export default function PostepScreen() {
     const dates = getFirstSaturdaysBetweenYears(yearsSpan[0], yearsSpan[2]);
     return dates.sort();
   }, [yearsSpan]);
+
+  const centerTargetIndex = useMemo(() => {
+    const todayISO = format(new Date(), 'yyyy-MM-dd');
+    const futureIdx = allFirstSaturdays.findIndex((iso) => iso >= todayISO);
+    if (futureIdx === -1) return allFirstSaturdays.length - 1;
+    return futureIdx;
+  }, [allFirstSaturdays]);
 
   useEffect(() => {
     (async () => {
@@ -83,6 +91,17 @@ export default function PostepScreen() {
     AsyncStorage.setItem(CYCLES_KEY, String(totalCycles));
   }, [totalCycles]);
 
+  useEffect(() => {
+    // lekkie opóźnienie po renderze
+    const id = setTimeout(() => {
+      if (!scrollRef.current) return;
+      const approximateItemHeight = 72; // przybliżona wysokość karty
+      const y = Math.max(0, (centerTargetIndex - 2) * (approximateItemHeight + 12));
+      scrollRef.current.scrollTo({ y, animated: true });
+    }, 100);
+    return () => clearTimeout(id);
+  }, [centerTargetIndex]);
+
   function toggleDate(date: string) {
     setCompleted((s) => ({ ...s, [date]: !s[date] }));
   }
@@ -99,7 +118,7 @@ export default function PostepScreen() {
   const nextFive = useMemo(() => Array.from({ length: 5 }).map((_, i) => i < currentStreak), [currentStreak]);
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, backgroundColor: theme.background, alignItems: 'center' }}>
+    <ScrollView ref={scrollRef} style={{ flex: 1 }} contentContainerStyle={{ padding: 20, backgroundColor: theme.background, alignItems: 'center' }}>
       <View style={{ width: '100%', maxWidth: 720 }}>
         <Text style={[styles.title, { color: theme.tint }]}>Kalendarz postępu</Text>
         <Text style={{ color: theme.text, marginTop: 4, textAlign: 'center' }}>Pełne nabożeństwa ukończone: {totalCycles}</Text>
