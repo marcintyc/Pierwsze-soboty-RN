@@ -12,12 +12,27 @@ export function getFirstSaturdaysOfYear(year: number): string[] {
   return saturdays;
 }
 
+export function getFirstSaturdayFor(year: number, monthZeroBased: number): Date {
+  const dayOfWeek = getDay(new Date(year, monthZeroBased, 1));
+  const offset = (6 - dayOfWeek + 7) % 7;
+  return addDays(new Date(year, monthZeroBased, 1), offset);
+}
+
 export function getFirstSaturdayOfCurrentMonth(): string {
   const now = new Date();
-  const dayOfWeek = getDay(new Date(now.getFullYear(), now.getMonth(), 1));
-  const offset = (6 - dayOfWeek + 7) % 7;
-  const firstSaturday = addDays(new Date(now.getFullYear(), now.getMonth(), 1), offset);
+  const firstSaturday = getFirstSaturdayFor(now.getFullYear(), now.getMonth());
   return format(firstSaturday, 'yyyy-MM-dd');
+}
+
+export function getNextFirstSaturdayFrom(date: Date): Date {
+  const currentMonthFirst = getFirstSaturdayFor(date.getFullYear(), date.getMonth());
+  if (currentMonthFirst >= new Date(date.getFullYear(), date.getMonth(), date.getDate())) {
+    return currentMonthFirst;
+  }
+  // else take next month
+  const nextMonth = date.getMonth() === 11 ? 0 : date.getMonth() + 1;
+  const nextYear = date.getMonth() === 11 ? date.getFullYear() + 1 : date.getFullYear();
+  return getFirstSaturdayFor(nextYear, nextMonth);
 }
 
 export function getFirstSaturdaysBetweenYears(startYear: number, endYear: number): string[] {

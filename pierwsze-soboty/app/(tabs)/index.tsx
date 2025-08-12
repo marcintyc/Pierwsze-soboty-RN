@@ -5,10 +5,18 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { LinearGradient } from 'expo-linear-gradient';
 import Button from '@/components/ui/Button';
+import { useMemo } from 'react';
+import { getNextFirstSaturdayFrom } from '@/lib/firstSaturday';
+import { differenceInCalendarDays, format } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import { scheduleFirstSaturdayReminders } from '@/lib/notifications';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const theme = Colors[colorScheme ?? 'light'];
+
+  const nextFirstSaturday = useMemo(() => getNextFirstSaturdayFrom(new Date()), []);
+  const daysLeft = useMemo(() => Math.max(0, differenceInCalendarDays(nextFirstSaturday, new Date())), [nextFirstSaturday]);
 
   return (
     <LinearGradient colors={[theme.background, theme.card]} start={{ x: 0.2, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1 }}>
@@ -22,6 +30,11 @@ export default function HomeScreen() {
 
           <Text style={[styles.paragraph, { color: theme.text }]}>Tym, którzy przez pięć miesięcy w pierwsze soboty odprawią nabożeństwa, w stanie łaski i w intencji wynagradzającej Jej Niepokalanemu Sercu, wyjednam łaski potrzebne do zbawienia.</Text>
 
+          <View style={{ marginTop: 14, alignItems: 'center' }}>
+            <Text style={{ color: theme.text, fontWeight: '700' }}>Do najbliższej pierwszej soboty: {daysLeft} dni</Text>
+            <Text style={{ color: theme.text, opacity: 0.8 }}>{format(nextFirstSaturday, 'd MMMM yyyy (EEEE)', { locale: pl })}</Text>
+          </View>
+
           <View style={styles.actions}>
             <Link href="/warunki" asChild>
               <Button title="Rozpocznij nabożeństwo" variant="primary" />
@@ -32,6 +45,7 @@ export default function HomeScreen() {
             <Link href="/informacje" asChild>
               <Button title="Informacje" variant="ghost" />
             </Link>
+            <Button title="Ustaw przypomnienia" variant="outline" onPress={() => scheduleFirstSaturdayReminders(9, 0)} />
           </View>
         </ScrollView>
       </SafeAreaView>
